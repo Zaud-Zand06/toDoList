@@ -1,6 +1,8 @@
 import { format, differenceInCalendarDays, parse } from "date-fns";
 import "./style.css";
 
+// this vid for accordion https://www.youtube.com/watch?v=B_n4YONte5A&list=PL4-IK0AVhVjNcjfYDQEseNxuarDjSEdZK
+
 const currentDate = format(new Date(), "MM-dd-yyyy");
 
 class Task {
@@ -42,7 +44,7 @@ class Project {
   }
 
   get taskList() {
-    return this.#taskList > 0 ? this.#taskList : "No project goals set!";
+    return this.#taskList;
   }
 
   addNewTask(task, dueDate) {
@@ -55,73 +57,77 @@ class Project {
   }
 }
 
-const theScreen = function () {
-  const siteBody = document.getElementsByClassName("site-body")[0];
-  const taskListBody = document.getElementsByClassName("task-list-body");
-  const projectList = [];
-  let tempProject = "";
+const projectList = (function () {
+  const projects = [];
 
-  const newProjectButton = function () {
-    const button = document.createElement("a");
-    button.innerHTML = `Start a new project? :3`;
-    button.id = "add-new-project-button";
-    siteBody.appendChild(button);
-    button.addEventListener("click", () => {
-      tempProject = new Project(prompt("What are you trying to do?"));
-      projectList.push(tempProject);
-      checkForProjects();
-    });
-  };
-
-  const checkForProjects = () => {
-    projectList.length > 0 ? updateProjects() : newProjectButton();
-  };
-
-  function addNewTask() {
-    const task = prompt("Whats our first goal?");
-    const date = prompt("When do you want this done?");
-    tempProject.addNewTask(task, date);
-    console.log(tempProject.task);
-    updateProjects();
+  function addProject(newProject) {
+    projects.push(newProject);
   }
 
-  function updateProjects() {
+  return { projects, addProject };
+})();
+
+const getMoney = new Project("Get Money");
+projectList.addProject(getMoney);
+console.log(projectList.projects);
+getMoney.addNewTask("Finish TOP", "oct 21 2025");
+getMoney.addNewTask("break the world", "dec 14 2024");
+getMoney.addNewTask("hit new pr", "apr 17 2026");
+
+function theScreen() {
+  const siteBody = document.querySelector(".site-body");
+  const projectCardBox = document.querySelector(".project-card-box");
+
+  function clearSiteBody() {
     siteBody.innerHTML = "";
-    projectList.forEach(() => {
-      const projectCard = document.createElement("div");
-      projectCard.innerHTML = `
-        <h3>
-        ${tempProject.name}
-        </h3>
-        <div>
-        ${tempProject.taskList}
-        </div>
-      `;
-      console.log(projectList);
-      const newProjTaskButton = document.createElement("a");
-      newProjTaskButton.id = "new-project-task-button";
-      newProjTaskButton.innerHTML = "click to add tasks";
-      projectCard.appendChild(newProjTaskButton);
-      newProjTaskButton.addEventListener("click", () => {
-        addNewTask();
+  }
+
+  function displayProjects() {
+    projectCardBox.innerHTML = "";
+    projectList.projects.forEach((project) => {
+      const newProjectCard = document.createElement("div");
+      newProjectCard.classList.add("project-card-div");
+      const projectH1 = document.createElement("h1");
+      projectH1.innerHTML = `${project.name}`;
+      newProjectCard.appendChild(projectH1);
+      project.taskList.forEach((task) => {
+        const projectTask = document.createElement("div");
+        projectTask.innerHTML = `${task.title}`;
+        newProjectCard.appendChild(projectTask);
       });
-      projectCard.classList.add("project-card");
-      siteBody.appendChild(projectCard);
+      if (project.taskList.length == 0) {
+        const noTaskMessage = document.createElement("p");
+        noTaskMessage.innerHTML = "You dont have any goals yet...";
+        newProjectCard.appendChild(noTaskMessage);
+      }
+      projectCardBox.appendChild(newProjectCard);
+      addNewTaskButton(newProjectCard);
     });
-    newProjectButton();
   }
 
-  return { checkForProjects, updateProjects };
-};
-
-function screenHandler() {
-  const theScreen = theScreen();
-  theScreen.checkForProjects();
-  function makeNewProjectTaskButton() {
-    const newProjTaskButton = document.createElement("a");
-    newProjTaskButton.id = "new-project-task-button";
-    newProjTaskButton.innerHTML = "click to add tasks";
+  function addNewTaskButton(projectCardDiv) {
+    const newTaskButton = document.createElement("a");
+    newTaskButton.classList.add("new-task-button");
+    newTaskButton.innerHTML = "add a task!";
+    projectCardDiv.appendChild(newTaskButton);
   }
+
+  return { displayProjects, addNewTaskButton };
 }
 
-screenHandler();
+const clickHandler = (function () {
+  const currentScreen = theScreen();
+  currentScreen.displayProjects();
+  const button = document.getElementById("new-project-button");
+  button.addEventListener("click", () => {
+    let tempProject = new Project(prompt("What are you trying to do?"));
+    projectList.addProject(tempProject);
+    currentScreen.displayProjects();
+  });
+  const taskButton = document.getElementsByClassName("new-task-button");
+  for (let button of taskButton) {
+    button.addEventListener("click", (e) => {
+      console.log(e);
+    });
+  }
+})();
