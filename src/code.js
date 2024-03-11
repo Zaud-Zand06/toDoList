@@ -49,7 +49,20 @@ class Project {
 
   addNewTask(task, dueDate) {
     const newTask = new Task(task, dueDate);
+    const taskToSave = JSON.stringify(newTask);
+    localStorage.setItem("tasks", taskToSave);
     this.#taskList.push(newTask);
+  }
+
+  getTasksFromStorage() {
+    const retrievedTasks = localStorage.getItem("tasks");
+    const tasksToPush = [JSON.parse(retrievedTasks)];
+    if (tasksToPush.length <= 0) {
+      return "No tasks set!";
+    }
+    tasksToPush.forEach((task) => {
+      this.#taskList.push(task);
+    });
   }
 
   removeTask(task) {
@@ -59,28 +72,57 @@ class Project {
 
 const projectList = (function () {
   const projects = [];
+  getProjectsFromStorage();
 
   function addProject(newProject) {
     projects.push(newProject);
+    const projectToSave = JSON.stringify(newProject);
+    localStorage.setItem("projects", projectToSave);
+    getProjectsFromStorage();
   }
 
-  return { projects, addProject };
+  function getProjectFromList(nameOfProject) {
+    const projectToReturn = projects.find(
+      (proj) => proj.name === nameOfProject
+    );
+    return projectToReturn;
+  }
+
+  function getProjectsFromStorage() {
+    const retrievedProjects = localStorage.getItem("projects");
+    const projectsToPush = [JSON.parse(retrievedProjects)];
+    console.log(projectsToPush);
+    if (projectsToPush.length <= 0) {
+      return;
+    }
+    projectsToPush.forEach((project) => {
+      const projectClass = new Project(project.name);
+      projects.push(projectClass);
+    });
+  }
+
+  function removeProjectFromStorage(project) {
+    Storage.removeItem(project);
+  }
+
+  function clearProjectsFromStorage() {
+    localStorage.clear();
+  }
+
+  return { projects, addProject, getProjectFromList, getProjectsFromStorage };
 })();
 
-const getMoney = new Project("Get Money");
-projectList.addProject(getMoney);
 console.log(projectList.projects);
-getMoney.addNewTask("Finish TOP", "oct 21 2025");
-getMoney.addNewTask("break the world", "dec 14 2024");
-getMoney.addNewTask("hit new pr", "apr 17 2026");
+
+// const getMoney = new Project("Get Money");
+// projectList.addProject(getMoney);
+// getMoney.addNewTask("Finish TOP", "oct 21 2025");
+// getMoney.addNewTask("break the world", "dec 14 2024");
+// getMoney.addNewTask("hit new pr", "apr 17 2026");
+// console.log(projectList.projects);
 
 function theScreen() {
-  const siteBody = document.querySelector(".site-body");
   const projectCardBox = document.querySelector(".project-card-box");
-
-  function clearSiteBody() {
-    siteBody.innerHTML = "";
-  }
 
   function displayProjects() {
     projectCardBox.innerHTML = "";
@@ -92,7 +134,7 @@ function theScreen() {
       newProjectCard.appendChild(projectH1);
       project.taskList.forEach((task) => {
         const projectTask = document.createElement("div");
-        projectTask.innerHTML = `${task.title}`;
+        projectTask.innerHTML = `${task.title} done by ${task.dueDate}`;
         newProjectCard.appendChild(projectTask);
       });
       if (project.taskList.length == 0) {
@@ -117,17 +159,35 @@ function theScreen() {
 
 const clickHandler = (function () {
   const currentScreen = theScreen();
-  currentScreen.displayProjects();
-  const button = document.getElementById("new-project-button");
-  button.addEventListener("click", () => {
-    let tempProject = new Project(prompt("What are you trying to do?"));
-    projectList.addProject(tempProject);
-    currentScreen.displayProjects();
-  });
+  const projectButton = document.getElementById("new-project-button");
   const taskButton = document.getElementsByClassName("new-task-button");
-  for (let button of taskButton) {
-    button.addEventListener("click", (e) => {
-      console.log(e);
+
+  function createNewProjectButton() {
+    projectButton.addEventListener("click", () => {
+      let tempProject = new Project(prompt("What are you trying to do?"));
+      projectList.addProject(tempProject);
+      initializeScreen();
     });
   }
+
+  function createTaskbuttons() {
+    for (let button of taskButton) {
+      button.addEventListener("click", (e) => {
+        const projectName = button.parentNode.firstChild.innerHTML;
+        const projectToAddTask = projectList.getProjectFromList(projectName);
+        const task = prompt("What goal do you need to accomplish?");
+        const date = prompt("When should you have it done by?");
+        projectToAddTask.addNewTask(task, date);
+        initializeScreen();
+      });
+    }
+  }
+
+  function initializeScreen() {
+    currentScreen.displayProjects();
+    createNewProjectButton();
+    createTaskbuttons();
+  }
+
+  initializeScreen();
 })();
