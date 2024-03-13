@@ -1,4 +1,4 @@
-import { format, differenceInCalendarDays, parse } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import "./style.css";
 
 // this vid for accordion https://www.youtube.com/watch?v=B_n4YONte5A&list=PL4-IK0AVhVjNcjfYDQEseNxuarDjSEdZK
@@ -81,11 +81,12 @@ class Project {
 }
 
 const projectList = (function () {
-  const projects = [];
+  let projects = [];
   getProjectsFromStorage();
 
   function addProject(newProject) {
-    const projectToSave = JSON.stringify(newProject);
+    projects.push(newProject);
+    const projectToSave = JSON.stringify(projects);
     localStorage.setItem("projects", projectToSave);
     getProjectsFromStorage();
   }
@@ -98,6 +99,7 @@ const projectList = (function () {
   }
 
   function getProjectsFromStorage() {
+    projects = [];
     const retrievedProjects = localStorage.getItem("projects");
     const projectsToPush = [JSON.parse(retrievedProjects)];
     projectsToPush.forEach((project) => {
@@ -109,9 +111,6 @@ const projectList = (function () {
     });
   }
 
-  function removeProjectFromStorage(project) {
-    Storage.removeItem(project);
-  }
   return { projects, addProject, getProjectFromList, getProjectsFromStorage };
 })();
 
@@ -139,9 +138,19 @@ function theScreen() {
       if (task.title == undefined) {
         taskDiv.innerHTML = `${task}`;
         cardToAppend.appendChild(taskDiv);
+
         return;
       }
-      taskDiv.innerHTML = `${task.title}: to be done by: ${task.dueDate}`;
+      taskDiv.classList.add("tasks-div");
+      taskDiv.innerHTML = `
+      <div>
+      ${task.title}: to be done by: ${task.dueDate}
+      </div>
+      <div>
+      <input type="checkbox" id="completion" name="completion" value="Completed">
+      <label for="completion"> Days left: ${task.remainingDays}</label>
+      </div>
+`;
       cardToAppend.appendChild(taskDiv);
     });
   }
@@ -170,9 +179,10 @@ const clickHandler = (function () {
     });
   }
 
+  //something strange is brewing here....
   function createTaskbuttons() {
     for (let button of taskButton) {
-      button.addEventListener("click", (e) => {
+      button.addEventListener("click", () => {
         const projectName = button.parentNode.firstChild.innerHTML;
         const projectToAddTask = projectList.getProjectFromList(projectName);
         const task = prompt("What goal do you need to accomplish?");
@@ -183,11 +193,18 @@ const clickHandler = (function () {
     }
   }
 
+  // function createSaveProjectsButton() {
+  //   const saveProjectsButton = document.getElementById("save-project-button");
+  //   saveProjectsButton.addEventListener("click", () => {});
+  // }
+
   function initializeScreen() {
     currentScreen.displayProjects();
     createNewProjectButton();
     createTaskbuttons();
   }
 
-  initializeScreen();
+  return { initializeScreen };
 })();
+
+clickHandler.initializeScreen();
