@@ -64,6 +64,7 @@ class Project {
         this.#taskList.push(tasksToPush[0]);
         return;
         // all other tasks added
+        // add task methonds back to tasks we pull from local storage
       } else if (tasksToPush[0] != "No tasks set!") {
         tasksToPush.forEach((task) => {
           this.#taskList.push(task);
