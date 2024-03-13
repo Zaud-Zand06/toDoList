@@ -44,25 +44,35 @@ class Project {
   }
 
   get taskList() {
+    this.#taskList = [];
+    this.getTasksFromStorage();
     return this.#taskList;
   }
 
   addNewTask(task, dueDate) {
     const newTask = new Task(task, dueDate);
-    const taskToSave = JSON.stringify(newTask);
-    localStorage.setItem("tasks", taskToSave);
     this.#taskList.push(newTask);
+    localStorage.setItem(`${this.name}Tasks`, JSON.stringify(this.#taskList));
   }
 
   getTasksFromStorage() {
-    const retrievedTasks = localStorage.getItem("tasks");
-    const tasksToPush = [JSON.parse(retrievedTasks)];
-    if (tasksToPush.length <= 0) {
-      return "No tasks set!";
+    const retrievedTasks = localStorage.getItem(`${this.name}Tasks`);
+    if (retrievedTasks != null) {
+      const tasksToPush = JSON.parse(retrievedTasks);
+      if (tasksToPush[0] == "No tasks set!" && tasksToPush.length > 1) {
+        tasksToPush.splice(0, 1);
+        this.#taskList.push(tasksToPush[0]);
+        return;
+        // all other tasks added
+      } else if (tasksToPush[0] != "No tasks set!") {
+        tasksToPush.forEach((task) => {
+          this.#taskList.push(task);
+        });
+        return;
+      }
+    } else {
+      this.#taskList.push("No tasks set!");
     }
-    tasksToPush.forEach((task) => {
-      this.#taskList.push(task);
-    });
   }
 
   removeTask(task) {
@@ -75,7 +85,6 @@ const projectList = (function () {
   getProjectsFromStorage();
 
   function addProject(newProject) {
-    projects.push(newProject);
     const projectToSave = JSON.stringify(newProject);
     localStorage.setItem("projects", projectToSave);
     getProjectsFromStorage();
@@ -91,11 +100,10 @@ const projectList = (function () {
   function getProjectsFromStorage() {
     const retrievedProjects = localStorage.getItem("projects");
     const projectsToPush = [JSON.parse(retrievedProjects)];
-    console.log(projectsToPush);
-    if (projectsToPush.length <= 0) {
-      return;
-    }
     projectsToPush.forEach((project) => {
+      if (project === null) {
+        return;
+      }
       const projectClass = new Project(project.name);
       projects.push(projectClass);
     });
@@ -104,22 +112,8 @@ const projectList = (function () {
   function removeProjectFromStorage(project) {
     Storage.removeItem(project);
   }
-
-  function clearProjectsFromStorage() {
-    localStorage.clear();
-  }
-
   return { projects, addProject, getProjectFromList, getProjectsFromStorage };
 })();
-
-console.log(projectList.projects);
-
-// const getMoney = new Project("Get Money");
-// projectList.addProject(getMoney);
-// getMoney.addNewTask("Finish TOP", "oct 21 2025");
-// getMoney.addNewTask("break the world", "dec 14 2024");
-// getMoney.addNewTask("hit new pr", "apr 17 2026");
-// console.log(projectList.projects);
 
 function theScreen() {
   const projectCardBox = document.querySelector(".project-card-box");
@@ -132,18 +126,23 @@ function theScreen() {
       const projectH1 = document.createElement("h1");
       projectH1.innerHTML = `${project.name}`;
       newProjectCard.appendChild(projectH1);
-      project.taskList.forEach((task) => {
-        const projectTask = document.createElement("div");
-        projectTask.innerHTML = `${task.title} done by ${task.dueDate}`;
-        newProjectCard.appendChild(projectTask);
-      });
-      if (project.taskList.length == 0) {
-        const noTaskMessage = document.createElement("p");
-        noTaskMessage.innerHTML = "You dont have any goals yet...";
-        newProjectCard.appendChild(noTaskMessage);
-      }
+      displayTasks(project, newProjectCard);
       projectCardBox.appendChild(newProjectCard);
       addNewTaskButton(newProjectCard);
+    });
+  }
+
+  function displayTasks(project, cardToAppend) {
+    const tasksToDisplay = project.taskList;
+    tasksToDisplay.forEach((task) => {
+      const taskDiv = document.createElement("div");
+      if (task.title == undefined) {
+        taskDiv.innerHTML = `${task}`;
+        cardToAppend.appendChild(taskDiv);
+        return;
+      }
+      taskDiv.innerHTML = `${task.title}: to be done by: ${task.dueDate}`;
+      cardToAppend.appendChild(taskDiv);
     });
   }
 
@@ -164,7 +163,8 @@ const clickHandler = (function () {
 
   function createNewProjectButton() {
     projectButton.addEventListener("click", () => {
-      let tempProject = new Project(prompt("What are you trying to do?"));
+      let tempProject = prompt("What are you trying to do?");
+      tempProject = new Project(tempProject);
       projectList.addProject(tempProject);
       initializeScreen();
     });
