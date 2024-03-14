@@ -91,17 +91,11 @@ const projectList = (function () {
     getProjectsFromStorage();
   }
 
-  function getProjectFromList(nameOfProject) {
-    const projectToReturn = projects.find(
-      (proj) => proj.name === nameOfProject
-    );
-    return projectToReturn;
-  }
-
   function getProjectsFromStorage() {
     projects = [];
     const retrievedProjects = localStorage.getItem("projects");
-    const projectsToPush = [JSON.parse(retrievedProjects)];
+    const projectsToPush = JSON.parse(retrievedProjects);
+    console.log(projectsToPush);
     projectsToPush.forEach((project) => {
       if (project === null) {
         return;
@@ -111,7 +105,7 @@ const projectList = (function () {
     });
   }
 
-  return { projects, addProject, getProjectFromList, getProjectsFromStorage };
+  return { projects, addProject };
 })();
 
 function theScreen() {
@@ -135,6 +129,7 @@ function theScreen() {
     const tasksToDisplay = project.taskList;
     tasksToDisplay.forEach((task) => {
       const taskDiv = document.createElement("div");
+      // if empty task list
       if (task.title == undefined) {
         taskDiv.innerHTML = `${task}`;
         cardToAppend.appendChild(taskDiv);
@@ -173,6 +168,9 @@ const clickHandler = (function () {
   function createNewProjectButton() {
     projectButton.addEventListener("click", () => {
       let tempProject = prompt("What are you trying to do?");
+      if (tempProject == null || undefined || "") {
+        return;
+      }
       tempProject = new Project(tempProject);
       projectList.addProject(tempProject);
       initializeScreen();
@@ -181,10 +179,9 @@ const clickHandler = (function () {
 
   //something strange is brewing here....
   function createTaskbuttons() {
-    for (let button of taskButton) {
-      button.addEventListener("click", () => {
-        const projectName = button.parentNode.firstChild.innerHTML;
-        const projectToAddTask = projectList.getProjectFromList(projectName);
+    for (let index = 0; index < taskButton.length; index++) {
+      taskButton[index].addEventListener("click", () => {
+        const projectToAddTask = projectList.projects[index];
         const task = prompt("What goal do you need to accomplish?");
         const date = prompt("When should you have it done by?");
         projectToAddTask.addNewTask(task, date);
