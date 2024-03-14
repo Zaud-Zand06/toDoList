@@ -59,15 +59,17 @@ class Project {
     const retrievedTasks = localStorage.getItem(`${this.name}Tasks`);
     if (retrievedTasks != null) {
       const tasksToPush = JSON.parse(retrievedTasks);
+      console.log(tasksToPush);
       if (tasksToPush[0] == "No tasks set!" && tasksToPush.length > 1) {
         tasksToPush.splice(0, 1);
-        this.#taskList.push(tasksToPush[0]);
+        const taskClass = this.addNewTask(tasksToPush[0].title, tasksToPush[0].dueDate)
+        this.#taskList.push(taskClass);
         return;
         // all other tasks added
-        // add task methonds back to tasks we pull from local storage
       } else if (tasksToPush[0] != "No tasks set!") {
         tasksToPush.forEach((task) => {
-          this.#taskList.push(task);
+          const taskClass = new Task(task.title, task.dueDate);
+          this.#taskList.push(taskClass);
         });
         return;
       }
@@ -96,11 +98,10 @@ const projectList = (function () {
     projects = [];
     const retrievedProjects = localStorage.getItem("projects");
     const projectsToPush = JSON.parse(retrievedProjects);
-    console.log(projectsToPush);
+    if (projectsToPush === null) {
+      return;
+    }
     projectsToPush.forEach((project) => {
-      if (project === null) {
-        return;
-      }
       const projectClass = new Project(project.name);
       projects.push(projectClass);
     });
@@ -190,11 +191,6 @@ const clickHandler = (function () {
       });
     }
   }
-
-  // function createSaveProjectsButton() {
-  //   const saveProjectsButton = document.getElementById("save-project-button");
-  //   saveProjectsButton.addEventListener("click", () => {});
-  // }
 
   function initializeScreen() {
     currentScreen.displayProjects();
