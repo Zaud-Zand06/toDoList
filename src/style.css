@@ -60,3 +60,9 @@ a {
   background-color: #efa30a86;
   gap: 20px;
 }
+
+.tasks-div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}

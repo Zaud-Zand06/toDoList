@@ -132,10 +132,9 @@ function theScreen() {
     tasksToDisplay.forEach((task) => {
       const taskDiv = document.createElement("div");
       // if empty task list
-      if (task.title == undefined) {
+      if (task == undefined) {
         taskDiv.innerHTML = `${task}`;
         cardToAppend.appendChild(taskDiv);
-
         return;
       }
       taskDiv.classList.add("tasks-div");
@@ -192,10 +191,24 @@ const clickHandler = (function () {
     }
   }
 
+  function completionChecker() {
+    const completionCheckbox = document.querySelectorAll('input[name=completion]');
+    for (let index = 0; index < completionCheckbox.length; index++) {
+      completionCheckbox[index].addEventListener('change', () => {
+        if (this.checked) {
+          console.log('completed');
+        } else {
+          console.log('not completed');
+        }
+      })
+    }
+  }
+
   function initializeScreen() {
     currentScreen.displayProjects();
     createNewProjectButton();
     createTaskbuttons();
+    completionChecker();
   }
 
   return { initializeScreen };
