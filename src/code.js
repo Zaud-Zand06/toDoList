@@ -43,9 +43,33 @@ class Project {
     this.name = name;
   }
 
-  get taskList() {
+  saveTaskList() {
+    localStorage.setItem(`${this.name}Tasks`, JSON.stringify(this.#taskList));
+  }
+
+  initializeTaskList() {
     this.#taskList = [];
-    this.getTasksFromStorage();
+    const retrievedTasks = localStorage.getItem(`${this.name}Tasks`);
+    if (retrievedTasks) {
+      const tasksToPush = JSON.parse(retrievedTasks);
+      if (tasksToPush[0] === "No tasks set!" && tasksToPush.length > 1) {
+        tasksToPush.shift();
+      }
+      tasksToPush.forEach((task) => {
+        if (task !== "No tasks set!") {
+          const taskClass = new Task(task.title, task.dueDate);
+          if (task.completed == true) {
+            taskClass.markAsCompleted();
+          }
+          this.#taskList.push(taskClass);
+        }
+      });
+    } else {
+      this.#taskList.push("No tasks set!");
+    }
+  }
+
+  get taskList() {
     return this.#taskList;
   }
 
@@ -58,29 +82,13 @@ class Project {
   }
 
   addNewTask(task, dueDate) {
-    const newTask = new Task(task, dueDate);
-    this.#taskList.push(newTask);
-    localStorage.setItem(`${this.name}Tasks`, JSON.stringify(this.#taskList));
-  }
-
-  saveTaskList() {
-    localStorage.setItem(`${this.name}Tasks`, JSON.stringify(this.#taskList));
-  }
-
-  getTasksFromStorage() {
-    const retrievedTasks = localStorage.getItem(`${this.name}Tasks`);
-    if (!retrievedTasks) {
-      this.#taskList.push("No tasks set!");
-      return;
+    try {
+      const newTask = new Task(task, dueDate);
+      this.#taskList.push(newTask);
+      localStorage.setItem(`${this.name}Tasks`, JSON.stringify(this.#taskList));
+    } catch (error) {
+      console.error("Failed to save task:", error);
     }
-    const tasksToPush = JSON.parse(retrievedTasks);
-    if (tasksToPush[0] === "No tasks set!" && tasksToPush.length > 1) {
-      tasksToPush.shift();
-    }
-    tasksToPush.forEach((task) => {
-      const taskClass = new Task(task.title, task.dueDate);
-      this.#taskList.push(taskClass);
-    });
   }
 
   removeTask(task) {
@@ -141,16 +149,17 @@ function theScreen() {
   }
 
   function displayTasks(project, cardToAppend) {
+    project.initializeTaskList();
     for (let index = 0; index < project.taskList.length; index++) {
-      const taskDiv = document.createElement("div");
       console.log(project.taskList);
-      if (project.taskList[index] == undefined) {
+      const taskDiv = document.createElement("div");
+      if (project.taskList[index] == "No tasks set!") {
         taskDiv.innerHTML = `${project.taskList[index]}`;
         cardToAppend.appendChild(taskDiv);
         return;
       }
       project.taskList[index].completed == true
-        ? taskDiv.classList.add("tasks-div-completed")
+        ? taskDiv.classList.add("tasks-div", "completed")
         : taskDiv.classList.add("tasks-div");
       taskDiv.innerHTML = `
       <div>
@@ -164,10 +173,9 @@ function theScreen() {
 
   function addCheckBox(task, taskDivToAddCheckBox, project) {
     const checkBoxDiv = document.createElement("div");
-    console.log(task);
     if (task.completed == true) {
       checkBoxDiv.innerHTML = `
-        <input type="checkbox" id="${task.title}" name="{completion}" value="${project.name}" checked>
+        <input type="checkbox" id="${task.title}" name="completion" value="${project.name}" checked>
         <label for="completion"> Days left: ${task.remainingDays}</label>
         `;
       taskDivToAddCheckBox.appendChild(checkBoxDiv);
@@ -207,7 +215,6 @@ const clickHandler = (function () {
     });
   }
 
-  //add a method to group tasks by project
   function createTaskbuttons() {
     for (let index = 0; index < taskButton.length; index++) {
       taskButton[index].addEventListener("click", () => {
@@ -226,18 +233,11 @@ const clickHandler = (function () {
     );
     for (let index = 0; index < completionCheckbox.length; index++) {
       completionCheckbox[index].addEventListener("change", (e) => {
-        if (e.target.checked) {
-          const tempProject = projectList.getSpecificProject(e.target.value);
-          console.log(tempProject);
-          const task = tempProject.getSpecificTask(e.target.id);
-          task.markAsCompleted();
-          tempProject.saveTaskList();
-          console.log(task);
-          //mark task as completed
-          console.log("completed");
-        } else {
-          console.log("not completed");
-        }
+        const tempProject = projectList.getSpecificProject(e.target.value);
+        const task = tempProject.getSpecificTask(e.target.id);
+        e.target.checked ? task.markAsCompleted() : task.markAsCompleted();
+        tempProject.saveTaskList();
+        initializeScreen();
       });
     }
   }

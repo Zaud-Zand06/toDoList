@@ -66,3 +66,8 @@ a {
   grid-template-columns: 1fr 1fr;
   align-items: center;
 }
+
+.completed {
+  color: #00000085;
+  text-decoration: line-through;
+}
